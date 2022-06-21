@@ -65,6 +65,15 @@ app.post('/api/notes', (request, response) => {
   notes = [...notes, NewNote]
   response.status(201).json(NewNote)
 })
+app.put('/api/notes/:id', (request, response, next) => {
+  const { id } = request.params
+  const post = request.body
+  const newPost = {
+    subject: post.subject,
+    content: post.content
+  }
+  
+})
 app.use((request, response) => {
   response.status(404).json({
     Error: 'Not Found'
