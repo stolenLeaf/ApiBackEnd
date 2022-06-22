@@ -1,8 +1,12 @@
 
 const express = require('express')
 const cors = require('cors')
+const User = require('./models/user')
+const Post = require('./models/Post')
 
-let notes = [
+const userExtractor = require('./middleware/userExtractor')
+
+const posts = [
   {
     id: 1,
     content: 'Me tengo que suscribir a @midudev en YouTube',
@@ -30,49 +34,75 @@ app.use(cors())
 app.get('/', (request, response) => {
   response.send('<h1>hola mundo express</h1>')
 })
-app.get('/api/notes', (request, response) => {
-  response.json(notes)
+app.get('/api/Posts', (request, response) => {
+  response.json(posts)
 })
-app.get('/api/notes/:id', (request, response) => {
-  const id = Number(request.params.id)
-  const note = notes.find(note => note.id === id)
-  if (note) {
-    response.json(note)
-  } else {
-    response.status(404).end()
-  }
+// listo
+app.get('/api/Posts/:id', (request, response, next) => {
+  const { id } = request.params
+  Post.findById(id)
+    .then(post => {
+      if (post) return response.json(post)
+      response.status(404).end()
+    })
+    .catch(err => next(err))
 })
-app.delete('/api/notes/:id', (request, response) => {
-  const id = Number(request.params.id)
-  notes = notes.filter(note => note.id !== id)
+// listo
+app.delete('/api/Posts/:id', userExtractor, async (request, response, next) => {
+  const { id } = request.params
+  const res = await Post.findByIdAndDelete(id)
+  if (res === null) return response.sendStatus(404)
+
   response.status(204).end()
 })
-app.post('/api/notes', (request, response) => {
-  const note = request.body
-  if (!note || !note.content) {
+app.post('/api/Posts', userExtractor, async (request, response, next) => {
+  const {
+    subject,
+    content
+  } = request.body
+  // sacar id de request
+  const { userID } = request
+  const user = await User.findById(userID)
+  if (!content) {
     return response.status(400).json({
-      Error: 'note.Content is missing'
+      error: 'required "content" field is missing'
     })
   }
-  const ids = notes.map(notes => notes.id)
-  const MaxId = Math.max(...ids)
-  const NewNote = {
-    id: MaxId + 1,
-    content: note.content,
-    important: typeof note.important !== 'undefined' ? note.important : false,
-    date: new Date().toISOString()
+  if (!subject) {
+    return response.status(400).json({
+      error: 'required "content" field is missing'
+    })
   }
-  notes = [...notes, NewNote]
-  response.status(201).json(NewNote)
+
+  const newPost = new Post({
+    subject,
+    content,
+    date: new Date().toISOString(),
+    user: user._id
+  })
+  try {
+    const savePost = await newPost.save()
+    user.posts = user.posts.concat(savePost._id)
+    await user.save()
+    response.json(savePost)
+  } catch (error) {
+    next(error)
+  }
 })
-app.put('/api/notes/:id', (request, response, next) => {
+// listo
+app.put('/api/Posts/:id', (request, response, next) => {
   const { id } = request.params
   const post = request.body
-  const newPost = {
-    subject: post.subject,
-    content: post.content
+  const newPostinfo = {
+    subject: Post.subject,
+    content: Post.content
   }
-  
+
+  Post.findByIdAndUpdate(id, newPostinfo, { new: true })
+    .then(result => {
+      response.json(result)
+    })
+    .catch(next)
 })
 app.use((request, response) => {
   response.status(404).json({

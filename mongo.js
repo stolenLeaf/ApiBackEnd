@@ -10,21 +10,21 @@ mongoose.connect(connectionString)
   })
 // schema de db
 
-const post = new Post({
-  subject: 'esto es una prueba',
-  content: 'contenido de prueba',
-  user: 'Stolen',
-  edit: false,
-  date: new Date().toISOString(),
-  erased: false,
-  status: true,
-  motivo: 'funciona'
-})
-post.save()
-  .then(result => {
-    console.log(result)
-    mongoose.connection.close()
-  })
-  .catch(err => {
-    console.err(err)
-  })
+// const post = new Post({
+//   subject: 'esto es una prueba',
+//   content: 'contenido de prueba',
+//   user: 'Stolen',
+//   edit: false,
+//   date: new Date().toISOString(),
+//   erased: false,
+//   status: true,
+//   motivo: 'funciona'
+// })
+// post.save()
+//   .then(result => {
+//     console.log(result)
+//     mongoose.connection.close()
+//   })
+//   .catch(err => {
+//     console.err(err)
+//   })
